@@ -120,3 +120,5 @@ The trade-offs are worth it though, especially as I plan to continue developing 
 This refactoring is as much about learning good software design principles as it is about improving the actual code. It's a personal project, so I have the freedom to experiment with architecture patterns that I might want to use in professional settings later.
 
 I'll document the process along the way, which will help both my future self and anyone looking at this project as part of my portfolio.
+
+Also, this thing's current name is too long (BinanceOrderBookAndSpikeTracker? Blehg.) I'm shortening it to crypto_monitor
