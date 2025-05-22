@@ -1,0 +1,14 @@
+# Core dependencies for cryptocurrency monitoring 
+websocket-client
+colorama
+pytz
+ 
+# 3D Visualization dependencies (optional but recommended) 
+plotly
+dash
+pandas
+numpy
+ 
+# Additional visualization dependencies 
+dash-core-components
+dash-html-components
