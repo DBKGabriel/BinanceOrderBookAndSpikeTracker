@@ -125,7 +125,8 @@ class DatabaseManager:
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             """, self.batch_records)
             self.conn.commit()
-            print(f"Committed {len(self.batch_records)} records to database")
+            # This print command was annoying and cleared the dashboard more than I wanted
+            # print(f"Committed {len(self.batch_records)} records to database")
             self.batch_records = []
             self.last_commit_time = time.time()
         except sqlite3.Error as e:
