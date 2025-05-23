@@ -2,6 +2,9 @@ import argparse
 
 # Default configuration settings
 
+# Application version
+APP_VERSION = "2.1"
+
 # List of crypto symbols to track (lowercase for Binance.US API)
 DEFAULT_CRYPTO_SYMBOLS = ["btcusdt", "ethusdt", "xrpusdt", "ltcusdt", "dogeusdt"]
 
@@ -67,12 +70,57 @@ or press enter to record default list {[s.upper() for s in default_symbols]}: ''
         print(f"Tracking {[s.upper() for s in default_symbols]}")
         return default_symbols
 
+def get_database_name_interactively():
+    """
+    If the user doesn't define at command line execution
+    the name of the database storing orderbook and trade data, 
+    an interactive prompt asks them to either input a database
+    name or accept the default database name.
+    """
+    default_db_name = DEFAULT_DB_NAME
+    db_name = None  # Initialize to avoid "referenced before assignment" error
+    
+    prompt = f'''Input database name or press enter to use default ({default_db_name}): '''
+    
+    try:
+        user_input = input(prompt).strip()
+        
+        if not user_input:
+            print(f"Using database: {default_db_name}")
+            return default_db_name
+        
+        # Cleaning up the input
+        db_name = user_input.strip('"\'')
+        
+        # Auto-add .db extension if not present
+        if db_name and not db_name.endswith('.db'):
+            db_name = db_name + '.db'
+            print(f"[INFO] Added .db extension: {db_name}")
+        
+        if db_name:
+            print(f"Using database: {db_name}")
+            return db_name
+        else:
+            print("Invalid database name entered. Using default.")
+            print(f"Using database: {default_db_name}")
+            return default_db_name
+            
+    except (EOFError, KeyboardInterrupt):
+        print(f"\nUsing database: {default_db_name}")
+        return default_db_name
+    except Exception as e:
+        print(f"Error processing input: {e}")
+        print("Using default database name.")
+        print(f"Using database: {default_db_name}")
+        return default_db_name
+    
 def parse_arguments():
-    """Parse command-line arguments."""
+    """Parse command-line arguments provided at application execution."""
     parser = argparse.ArgumentParser(description="Cryptocurrency Market Data Monitor")
     parser.add_argument(
         "--db-name", 
-        default=DEFAULT_DB_NAME,
+        #default=DEFAULT_DB_NAME,
+        default=None,  # Changed to None so we can detect when not provided
         help="Database file name"
     )
     parser.add_argument(
@@ -97,7 +145,7 @@ def parse_arguments():
 
     # Handle symbol selection
     if args.symbols:
-        # Symbols provided via command line
+        # Symbols provided via command line at execution
         symbols = [s.lower() for s in args.symbols]
         print(f"Tracking {[s.upper() for s in symbols]}")
         args.symbols = symbols
@@ -105,4 +153,12 @@ def parse_arguments():
         # No symbols provided - prompt interactively
         args.symbols = get_symbols_interactively()
     
+    # Handle database name specification
+    if args.db_name:
+        #SQLite database name provided via command line at execution
+        print(f"Using database: {args.db_name}")
+    else:
+        # No database name provided - prompt interactively
+        args.db_name = get_database_name_interactively()
+
     return args

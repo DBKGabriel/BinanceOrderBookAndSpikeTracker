@@ -1,11 +1,11 @@
 crypto_monitor/
-├── .gitignore
-├── MVC-Structure-Diagram.md
-├── README.md
-├── requirements.txt
-├── Project_Structure_Diagram.md
-├── architecture/
-    └── adr-001-mvc-refactoring.md
+├── .gitignore                              # List files to exclude from git
+├── MVC-Structure-Diagram.md                # MVC-structure
+├── README.md                               # Explanation of application use and improvements
+├── requirements.txt                        # Dependency manager
+├── Project_Structure_Diagram.md            # This doc. Skeleton of entire project
+├── architecture/                           
+    └── adr-001-mvc-refactoring.md          # Decision to refactor initial monolith
 ├── crypto_monitor/
     ├── main.py                             # Application entry point
     ├── config.py                           # Configuration and argument parsing

@@ -5,7 +5,7 @@ from colorama import Fore, Style, init
 init()
 
 class ConsoleView:
-    def __init__(self, col_widths=None):
+    def __init__(self, col_widths=None, version="UNKNOWN"):
         """
         Initialize the console view.
         
@@ -20,11 +20,28 @@ class ConsoleView:
             "VOLUME": 15,
             "SPIKE": 10
         }
+        self.version = version
+        self.persistent_messages = []  # Store messages that should remain at top
     
-    def print_header(self, version="1.0"):
+    def add_persistent_message(self, message, color=None):
+        """Stops some info I wanted to remain from being cleared ."""
+        if color:
+            formatted_message = f"{color}{message}{Style.RESET_ALL}"
+        else:
+            formatted_message = message
+        self.persistent_messages.append(formatted_message)
+  
+    def print_header(self):
         """Print the header for the console output."""
         sys.stdout.write("\033c")  # Clears the console
-        print(f"{Fore.CYAN} Live Trade Updates from Binance.US (v{version}){Style.RESET_ALL}\n")
+        print(f"{Fore.CYAN} Live Trade Updates from Binance.US (v{self.version}){Style.RESET_ALL}\n")
+        
+        # Print persistent messages
+        for message in self.persistent_messages:
+            print(message)
+        
+        if self.persistent_messages:
+            print()  # Add blank line after persistent messages
         
         header_row = (
             f"{'TIME (ET)'.center(self.col_widths['TIME'])}"
@@ -93,6 +110,19 @@ class ConsoleView:
     def print_info(self, message):
         """Print an info message to the console."""
         self.print_message(f"[INFO] {message}", Fore.CYAN)
+    
+    def print_info(self, message, persistent=False):
+        """
+        Print an info message to the console.
+        
+        Args:
+            message: The message to print
+            persistent: If True, message will persist at top of console
+        """
+        formatted_message = f"[INFO] {message}"
+        if persistent:
+            self.add_persistent_message(formatted_message, Fore.CYAN)
+        self.print_message(formatted_message, Fore.CYAN)
     
     def print_warning(self, message):
         """Print a warning message to the console."""

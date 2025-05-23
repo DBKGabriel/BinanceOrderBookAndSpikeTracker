@@ -5,7 +5,7 @@ import time
 import atexit
 
 # Local imports
-from config_crypto_monitor import parse_arguments
+from config_crypto_monitor import parse_arguments, APP_VERSION
 from models.trade_model import TradeModel
 from models.order_book_model import OrderBookModel
 from models.database import DatabaseManager
@@ -49,9 +49,11 @@ class CryptoMonitorApp:
             self.db_name, 
             batch_size=self.batch_size
         )
+        print(f"[DEBUG MAIN] DatabaseManager initialized with: '{self.db_name}'")  # <-- ADD THIS
         
         # Initialize views
-        self.console_view = ConsoleView()
+        #self.console_view = ConsoleView()
+        self.console_view = ConsoleView(version=APP_VERSION)
         self.gui_view = GuiView()
         self.visualizer = VisualizationView(self.symbols)
         
@@ -68,7 +70,8 @@ class CryptoMonitorApp:
             self.trade_model,
             self.gui_view,
             self.console_view,
-            self.visualizer
+            self.visualizer,
+            main_app=self
         )
         
         # Override the database manager accessor
@@ -79,7 +82,8 @@ class CryptoMonitorApp:
         
         # Register cleanup handler
         atexit.register(self.cleanup)
-    
+        self.exit_flag = False
+
     def _setup_signal_handlers(self):
         """Setup signal handlers for graceful shutdown."""
         def signal_handler(sig, frame):
@@ -92,8 +96,8 @@ class CryptoMonitorApp:
     
     def start(self):
         """Start the application."""
-        self.console_view.print_info(f"Starting Cryptocurrency Market Monitor with database: {self.db_name}")
-        self.console_view.print_info(f"Tracking symbols: {', '.join(self.symbols)}")
+        self.console_view.print_info(f"Starting Cryptocurrency Market Monitor with database: {self.db_name}", persistent=True)
+        self.console_view.print_info(f"Tracking symbols: {', '.join(self.symbols)}", persistent=True)
         
         # Start command listener
         self.cmd_controller.start_listener()
@@ -109,15 +113,20 @@ class CryptoMonitorApp:
                 self.console_view.print_success("Visualization started. Open http://127.0.0.1:8050 in your browser.")
             else:
                 self.console_view.print_error("Failed to start visualization. Make sure you have required packages installed.")
-        
+    
         # Keep the main thread alive
         try:
-            while True:
+            #while True:
+            while not self.exit_flag: 
                 time.sleep(1)
         except KeyboardInterrupt:
             self.console_view.print_info("Shutting down...")
         finally:
             self.cleanup()
+    
+    def signal_exit(self):
+        """Signal the application to exit."""
+        self.exit_flag = True
     
     def cleanup(self):
         """Clean up resources."""

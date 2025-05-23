@@ -2,7 +2,7 @@ import threading
 import time
 
 class CommandController:
-    def __init__(self, trade_model, gui_view, console_view, visualizer=None):
+    def __init__(self, trade_model, gui_view, console_view, visualizer=None, main_app=None):
         """
         Initialize the command controller.
         
@@ -18,13 +18,16 @@ class CommandController:
         self.visualizer = visualizer
         self.running = False
         self.command_thread = None
-    
+        self.main_app = main_app
+
     def start_listener(self):
         """Start the command listener thread."""
         self.running = True
         self.command_thread = threading.Thread(target=self._command_loop, daemon=True)
         self.command_thread.start()
-        self.console_view.print_info("Command listener started. Type 'help' for available commands.")
+        self.console_view.print_info("Command listener started. " \
+        "Type 'help' for available commands." \
+        "Type 'exit' to exit application.", persistent=True)
     
     def _command_loop(self):
         """Command listener loop."""
@@ -59,6 +62,8 @@ exit                 - Exit the application
                 elif command == "exit":
                     self.running = False
                     self.console_view.print_info("Exiting application...")
+                    if self.main_app:
+                        self.main_app.signal_exit()  # <-- Add this line
                     break
                 else:
                     self.console_view.print_warning(f"Unknown command: {command}")
@@ -150,7 +155,6 @@ exit                 - Exit the application
     
     def _handle_flush_command(self):
         """Handle the 'flush' command."""
-        from models.database import DatabaseManager
         
         # Use context manager to access a protected method
         database_manager = self.get_database_manager()

@@ -53,7 +53,8 @@ class WebSocketController:
     def on_open(self, ws):
         """Handle WebSocket open event."""
         self.console_view.print_success("Connected to Binance.US combined stream.")
-    
+        self.console_view.print_info("WebSocket connected and receiving data.", persistent=True)
+
     def on_message(self, ws, message):
         """Handle incoming WebSocket messages."""
         data = json.loads(message)
