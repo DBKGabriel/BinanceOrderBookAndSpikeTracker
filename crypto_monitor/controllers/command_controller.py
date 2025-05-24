@@ -2,7 +2,7 @@ import threading
 import time
 
 class CommandController:
-    def __init__(self, trade_model, gui_view, console_view, visualizer=None, main_app=None):
+    def __init__(self, trade_model, gui_view, console_view, visualizer=None, ws_controller=None):
         """
         Initialize the command controller.
         
@@ -11,23 +11,22 @@ class CommandController:
             gui_view: GUI view for displaying trade history
             console_view: Console view for output
             visualizer: Optional visualization view
+            ws_controller: WebSocket controller for reconnection commands
         """
         self.trade_model = trade_model
         self.gui_view = gui_view
         self.console_view = console_view
         self.visualizer = visualizer
+        self.ws_controller = ws_controller
         self.running = False
         self.command_thread = None
-        self.main_app = main_app
-
+    
     def start_listener(self):
         """Start the command listener thread."""
         self.running = True
         self.command_thread = threading.Thread(target=self._command_loop, daemon=True)
         self.command_thread.start()
-        self.console_view.print_info("Command listener started. " \
-        "Type 'help' for available commands." \
-        "Type 'exit' to exit application.", persistent=True)
+        self.console_view.print_info("Command listener started. Type 'help' for available commands.")
     
     def _command_loop(self):
         """Command listener loop."""
@@ -39,6 +38,8 @@ viz on               - Turn on 3D visualization
 viz off              - Turn off 3D visualization
 save [symbol]        - Save trade history for a symbol to CSV
 flush                - Flush pending database records
+reconnect            - Reset and reconnect WebSocket connection
+status               - Show connection status
 help                 - Show this help message
 exit                 - Exit the application
         """
@@ -57,13 +58,15 @@ exit                 - Exit the application
                     self._handle_save_command(command)
                 elif command == "flush":
                     self._handle_flush_command()
+                elif command == "reconnect":
+                    self._handle_reconnect_command()
+                elif command == "status":
+                    self._handle_status_command()
                 elif command == "help":
                     self.console_view.print_message(help_text)
                 elif command == "exit":
                     self.running = False
                     self.console_view.print_info("Exiting application...")
-                    if self.main_app:
-                        self.main_app.signal_exit()  # <-- Add this line
                     break
                 else:
                     self.console_view.print_warning(f"Unknown command: {command}")
@@ -155,8 +158,6 @@ exit                 - Exit the application
     
     def _handle_flush_command(self):
         """Handle the 'flush' command."""
-        
-        # Use context manager to access a protected method
         database_manager = self.get_database_manager()
         if database_manager:
             self.console_view.print_info("Flushing pending database records...")
@@ -164,6 +165,66 @@ exit                 - Exit the application
             self.console_view.print_success("Database records flushed.")
         else:
             self.console_view.print_error("Database manager not accessible.")
+    
+    def _handle_reconnect_command(self):
+        """Handle the 'reconnect' command."""
+        if not self.ws_controller:
+            self.console_view.print_error("WebSocket controller not available.")
+            return
+        
+        self.console_view.print_info("Resetting WebSocket connection...")
+        self.ws_controller.reset_connection_state()
+        
+        # Close existing connection
+        if self.ws_controller.ws:
+            self.ws_controller.ws.close()
+        
+        # Wait a moment for cleanup
+        time.sleep(1)
+        
+        # Attempt new connection
+        self.ws_controller.connect()
+    
+    def _handle_status_command(self):
+        """Handle the 'status' command."""
+        self.console_view.print_info("=== Application Status ===")
+        
+        # Database status
+        database_manager = self.get_database_manager()
+        if database_manager:
+            pending_records = len(database_manager.batch_records) if hasattr(database_manager, 'batch_records') else 0
+            self.console_view.print_message(f"Database: Connected ({pending_records} pending records)")
+        else:
+            self.console_view.print_message("Database: Not available")
+        
+        # WebSocket status
+        if self.ws_controller:
+            if self.ws_controller.connection_successful and not self.ws_controller.exit_flag.is_set():
+                self.console_view.print_message("WebSocket: Connected")
+            elif self.ws_controller.reconnect_attempts > 0:
+                self.console_view.print_message(f"WebSocket: Reconnecting (attempt {self.ws_controller.reconnect_attempts}/{self.ws_controller.max_reconnect_attempts})")
+            else:
+                self.console_view.print_message("WebSocket: Disconnected")
+        else:
+            self.console_view.print_message("WebSocket: Not available")
+        
+        # Visualization status
+        if self.visualizer:
+            status = "Running" if self.visualizer.running else "Stopped"
+            self.console_view.print_message(f"Visualization: {status}")
+        else:
+            self.console_view.print_message("Visualization: Not available")
+        
+        # Trade data status
+        total_trades = sum(len(self.trade_model.get_trades(symbol)) for symbol in self.trade_model.symbols)
+        self.console_view.print_message(f"Total trades in memory: {total_trades}")
+        
+        for symbol in self.trade_model.symbols:
+            trades = self.trade_model.get_trades(symbol)
+            last_price = self.trade_model.get_last_price(symbol)
+            trade_count = len(trades)
+            price_info = f"${last_price:.2f}" if last_price else "No trades"
+            self.console_view.print_message(f"  {symbol}: {trade_count} trades, Last: {price_info}")
     
     def stop(self):
         """Stop the command listener."""
