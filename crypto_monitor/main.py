@@ -5,7 +5,7 @@ import time
 import atexit
 
 # Local imports
-from config_crypto_monitor import parse_arguments
+from config_crypto_monitor import parse_arguments, APP_VERSION
 from models.trade_model import TradeModel
 from models.order_book_model import OrderBookModel
 from models.database import DatabaseManager
@@ -40,8 +40,8 @@ class CryptoMonitorApp:
             batch_size=self.batch_size
         )
         
-        # Initialize views
-        self.console_view = ConsoleView()
+        # Initialize views - pass the version to ConsoleView
+        self.console_view = ConsoleView(version=APP_VERSION)
         self.gui_view = GuiView()
         self.visualizer = VisualizationView(self.symbols)
         
@@ -83,8 +83,8 @@ class CryptoMonitorApp:
     
     def start(self):
         """Start the application."""
-        self.console_view.print_info(f"Starting Cryptocurrency Market Monitor with database: {self.db_name}")
-        self.console_view.print_info(f"Tracking symbols: {', '.join(self.symbols)}")
+        self.console_view.print_info(f"Starting Cryptocurrency Market Monitor with database: {self.db_name}", persistent=True)
+        self.console_view.print_info(f"Tracking symbols: {', '.join(self.symbols)}", persistent=True)
         
         # Start command listener
         self.cmd_controller.start_listener()
@@ -102,7 +102,8 @@ class CryptoMonitorApp:
                 self.console_view.print_error("Failed to start visualization. Make sure you have required packages installed.")
         
         # Print initial help
-        self.console_view.print_info("Type 'help' for available commands, 'status' for connection info, or 'reconnect' to reset connection.")
+        # self.console_view.print_info("Type 'help' for available commands, 'status' for connection info, or 'reconnect' to reset connection.")
+        self.console_view.print_info("Type 'help' for available commands, 'status' for connection info, or 'reconnect' to reset connection.", persistent=True)
         
         # Keep the main thread alive
         try:

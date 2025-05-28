@@ -107,9 +107,9 @@ class ConsoleView:
         """Print a success message to the console."""
         self.print_message(f"[SUCCESS] {message}", Fore.GREEN)
     
-    def print_info(self, message):
-        """Print an info message to the console."""
-        self.print_message(f"[INFO] {message}", Fore.CYAN)
+    # def print_info(self, message):
+    #     """Print an info message to the console."""
+    #     self.print_message(f"[INFO] {message}", Fore.CYAN)
     
     def print_info(self, message, persistent=False):
         """
